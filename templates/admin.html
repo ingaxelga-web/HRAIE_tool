@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Administración - HRAEI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #121212; --surface: #1e1e1e; --surface-2: #2c2c2c;
+      --border: #333333; --border-hi: #444444;
+      --teal: #ab47bc; --teal-dim: rgba(171, 71, 188, 0.15);
+      --violet: #9c27b0; --accent-1: #ce93d8;
+      --gold: #ffca28; --gold-dim: rgba(251,191,36,.10);
+      --green: #81c784; --green-dim: rgba(129, 199, 132, 0.10);
+      --blue: #64b5f6; --red: #e57373; --red-dim: rgba(229, 115, 115, 0.10);
+      --sans: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      --radius: 8px; --radius-sm: 6px;
+    }
+    body { font-family: var(--sans); background: var(--bg); color: #e0e0e0; padding: 32px 16px; font-size: 14px; }
+    .shell { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-icon { width: 40px; height: 40px; background: var(--teal-dim); border: 1px solid var(--teal); border-radius: var(--radius-sm); display: grid; place-items: center; color: var(--teal); }
+    .page-title { font-size: 18px; font-weight: 700; color: var(--accent-1); }
+    .page-subtitle { font-size: 12px; color: #9e9e9e; }
+
+    .btn-top { font-weight: 700; border-radius: var(--radius-sm); padding: 7px 14px; cursor: pointer; text-decoration: none; transition: all .15s; }
+    .btn-outline-purple { color: var(--teal); border: 1px solid var(--teal); background: transparent; }
+    .btn-outline-purple:hover { background: var(--teal); color: #fff; }
+
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .section-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; }
+    .section-title { font-size: 15px; font-weight: 600; color: #fff; }
+    .section-body { padding: 22px; display: flex; flex-direction: column; gap: 20px; }
+
+    .upload-row { display: flex; flex-direction: column; gap: 8px; }
+    .upload-label-row { display: flex; align-items: baseline; gap: 8px; }
+    .upload-label { font-size: 12px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.3px; }
+    .upload-hint { font-size: 12px; color: #9e9e9e; margin-top: -4px; }
+
+    .file-input-wrap { position: relative; flex: 1; }
+    .file-input-wrap input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+    .file-input-face { display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 40px; background: var(--surface-2); border: 1px solid var(--border-hi); border-radius: var(--radius-sm); color: #9e9e9e; font-size: 13px; transition: border-color 0.15s; }
+    .file-input-wrap:hover .file-input-face { border-color: #888; color: #fff; }
+
+    .btn-upload { 
+    font-weight: 600; 
+    padding: 0 20px; 
+    height: 40px; 
+    border: none; 
+    border-radius: var(--radius-sm); 
+    cursor: pointer; 
+    flex-shrink: 0; 
+    color: #fff; 
+    transition: opacity 0.15s; 
+}
+    .btn-upload:hover { opacity: 0.85; }
+    .btn-gold { background: var(--gold); color: #1a1200; }
+    .btn-teal { background: var(--teal); }
+    .btn-blue { background: var(--blue); color: #000; }
+    .btn-purple { background: var(--violet); }
+    .btn-green { background: var(--green); color: #000; }
+    .btn-upload:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .status-bar { display: none; align-items: center; padding: 10px; border-radius: var(--radius-sm); font-size: 13px; margin-top: -4px; }
+    .status-bar.visible { display: flex; }
+    .status-bar.loading { background: var(--teal-dim); color: var(--teal); }
+    .status-bar.success { background: var(--green-dim); color: var(--green); }
+    .status-bar.error { background: var(--red-dim); color: var(--red); }
+
+    .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .legend-card { border-radius: var(--radius-sm); padding: 12px 14px; border: 1px solid var(--border-hi); background: #1a1a1a; display: flex; flex-direction: column; gap: 8px; transition: transform .15s, box-shadow .15s; }
+    .legend-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+    .legend-swatch { height: 26px; border-radius: 4px; border: 1px solid rgba(0,0,0,.3); display: flex; align-items: center; padding: 0 8px; font-size: 11px; font-weight: 700; color: #1a1a1a; font-family: 'Consolas', monospace; }
+    .legend-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #fff; letter-spacing: .4px; }
+    .legend-cols { font-size: 11px; color: #9e9e9e; line-height: 1.5; }
+    .legend-cols em { color: #b0bec5; font-style: normal; }
+    .swatch-control  { background: #FFF9C4; }
+    .swatch-paciente { background: #BBDEFB; }
+    .swatch-diag     { background: #E1BEE7; }
+    .swatch-insumo   { background: #C8E6C9; }
+
+    .mini-excel { border: 1px solid var(--border-hi); border-radius: var(--radius-sm); overflow: hidden; background: #1a1a1a; font-size: 10px; }
+    .mini-excel-header { display: flex; background: #252525; padding: 6px 10px; font-size: 11px; color: #9e9e9e; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1px solid var(--border); align-items: center; justify-content: space-between; }
+    .mini-excel-row { display: flex; overflow-x: auto; }
+    .mini-excel-cell { flex-shrink: 0; padding: 8px 10px; font-size: 10px; font-weight: 700; color: #1a1a1a; border-right: 1px solid rgba(0,0,0,.08); white-space: nowrap; min-width: 90px; font-family: 'Segoe UI', sans-serif; }
+    .mini-excel-cell:last-child { border-right: none; }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon">⚙️</div>
+      <div>
+        <div class="page-title">Administración del sistema</div>
+        <div class="page-subtitle">Catálogos · Importaciones · Exportaciones</div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/" class="btn-top btn-outline-purple">Captura diaria</a>
+    </div>
+  </header>
+
+  <!-- BORRADORES -->
+  <div class="section-card">
+    <div class="section-head" style="background: #1976d2;">
+      <span class="section-title">Importar Excel de la Oficina (Borradores)</span>
+    </div>
+    <div class="section-body">
+      <div class="upload-row">
+        <div class="upload-label-row">
+          <span class="upload-label">BORRADORES INCOMPLETOS</span>
+          <span style="font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px; background: rgba(129, 199, 132, 0.1); color: var(--green); border: 1px solid rgba(129, 199, 132, 0.3);">NUEVO</span>
+        </div>
+        <span class="upload-hint">Sube el archivo "PRUEBA DE LLENADO.xlsx" (debe tener cabeceras en la fila 3) para completar los faltantes.</span>
+        <div class="d-flex gap-2 align-items-stretch">
+          <div class="file-input-wrap" id="wrapBorradores">
+            <input type="file" id="archivoBorradores" accept=".xlsx" onchange="actualizarNombre('archivoBorradores','wrapBorradores','faceBorradores')">
+            <div class="file-input-face" id="faceBorradores">
+              <span id="nombreBorradores">Seleccionar archivo .xlsx</span>
+            </div>
+          </div>
+          <button class="btn-upload btn-green" id="btnBorradores" onclick="subirArchivo('archivoBorradores','/cargar_borradores_excel','btnBorradores','statusBorradores')">
+            Mandar a Tablero
+          </button>
+        </div>
+        <div class="status-bar" id="statusBorradores"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATÁLOGOS -->
+  <div class="section-card">
+    <div class="section-head" style="background: #8e24aa;">
+      <span class="section-title">Actualización de catálogos</span>
+    </div>
+    <div class="section-body">
+      <div class="upload-row">
+        <span class="upload-label">CATÁLOGO DE ALTO COSTO (GC)</span>
+        <div class="d-flex gap-2 align-items-stretch">
+          <div class="file-input-wrap">
+            <input type="file" id="archivo66" onchange="actualizarNombre('archivo66','','face66')">
+            <div class="file-input-face" id="face66"><span id="nombre66">Seleccionar .xlsx</span></div>
+          </div>
+          <button class="btn-upload btn-gold" style="width: 100px;" id="btn66" onclick="subirArchivo('archivo66','/cargar_66_intervenciones','btn66','status66')">Cargar</button>
+        </div>
+        <div class="status-bar" id="status66"></div>
+      </div>
+
+      <div class="upload-row mt-2">
+        <span class="upload-label">CATÁLOGO GENERAL (CIE-10)</span>
+        <div class="d-flex gap-2 align-items-stretch">
+          <div class="file-input-wrap">
+            <input type="file" id="archivoCie10" onchange="actualizarNombre('archivoCie10','','faceCie10')">
+            <div class="file-input-face" id="faceCie10"><span id="nombreCie10">Seleccionar .xlsx</span></div>
+          </div>
+          <button class="btn-upload btn-blue" style="width: 100px;" id="btnCie10" onclick="subirArchivo('archivoCie10','/cargar_catalogo_cie10','btnCie10','statusCie10')">Cargar</button>
+        </div>
+        <div class="status-bar" id="statusCie10"></div>
+      </div>
+
+      <div class="upload-row mt-2">
+        <span class="upload-label">CATÁLOGO SADMI</span>
+        <div class="d-flex gap-2 align-items-stretch">
+          <div class="file-input-wrap">
+            <input type="file" id="archivoSadmi" onchange="actualizarNombre('archivoSadmi','','faceSadmi')">
+            <div class="file-input-face" id="faceSadmi"><span id="nombreSadmi">Seleccionar .xlsx</span></div>
+          </div>
+          <button class="btn-upload btn-purple" style="width: 100px;" id="btnSadmi" onclick="subirArchivo('archivoSadmi','/cargar_catalogo_sadmi','btnSadmi','statusSadmi')">Cargar</button>
+        </div>
+        <div class="status-bar" id="statusSadmi"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESCARGAS -->
+  <div class="section-card">
+    <div class="section-head" style="background: #2e7d32;">
+      <span class="section-title">Descargar Finales</span>
+    </div>
+    <div class="section-body">
+      <a href="/exportar_excel" class="btn-upload btn-green d-flex align-items-center justify-content-center w-100" style="text-decoration: none; height: 44px; font-size: 14px;">
+        Descargar reporte de capturas (Final)
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══ LEYENDA DE BLOQUES (colores del Excel exportado) ═══ -->
+  <div class="section-card" style="border: 1px solid var(--gold);">
+    <div class="section-head" style="background: #4a3d10; display: flex; justify-content: space-between; align-items: center;">
+      <span class="section-title" style="color: var(--gold);">🎨 Guía de colores del Excel exportado</span>
+      <span style="font-size: 11px; color: #9e9e9e; font-weight: 500;">Solo el encabezado lleva color · útil para copy/paste selectivo</span>
+    </div>
+    <div class="section-body">
+
+      <p style="font-size: 12px; color: #b0bec5; margin: 0; line-height: 1.55;">
+        Cuando descargues el reporte, la <strong style="color:#fff;">fila 4</strong> (encabezados) viene coloreada por bloques.
+        Selecciona las columnas de un color y pégalas directo en tu Excel con candados — no se desfasan.
+      </p>
+
+      <div class="mini-excel">
+        <div class="mini-excel-header">
+          <span>Vista previa del encabezado (fila 4)</span>
+          <span style="color: var(--gold); font-size: 10px;">↔ scroll horizontal</span>
+        </div>
+        <div class="mini-excel-row">
+          <div class="mini-excel-cell" style="background:#FFF9C4;">No.</div>
+          <div class="mini-excel-cell" style="background:#FFF9C4;">Fecha Alta</div>
+          <div class="mini-excel-cell" style="background:#FFF9C4;">Código</div>
+          <div class="mini-excel-cell" style="background:#FFF9C4;">Nota</div>
+          <div class="mini-excel-cell" style="background:#FFF9C4;">DESTINO</div>
+
+          <div class="mini-excel-cell" style="background:#BBDEFB;">No. de expediente</div>
+          <div class="mini-excel-cell" style="background:#BBDEFB;">Apellido Paterno</div>
+          <div class="mini-excel-cell" style="background:#BBDEFB;">Apellido Materno</div>
+          <div class="mini-excel-cell" style="background:#BBDEFB;">Nombre(s)</div>
+          <div class="mini-excel-cell" style="background:#BBDEFB;">CURP</div>
+          <div class="mini-excel-cell" style="background:#BBDEFB;">Fecha de Nacimiento</div>
+          <div class="mini-excel-cell" style="background:#BBDEFB;">Sexo</div>
+          <div class="mini-excel-cell" style="background:#BBDEFB;">SEGURIDAD SOCIAL SI/NO</div>
+
+          <div class="mini-excel-cell" style="background:#E1BEE7;">INTERVENCION</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">DIAGNOSTICO</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">FASE</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">ESTATUS</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">FECHA DE DX</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">edad dx</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">INICIO</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">TERMINO</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">edad inicio</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">DIAGNOSTICOS MEDICOS</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">INTERVENCION SADMI</div>
+          <div class="mini-excel-cell" style="background:#E1BEE7;">DX SADMI</div>
+
+          <div class="mini-excel-cell" style="background:#C8E6C9;">Clave de CNIS</div>
+          <div class="mini-excel-cell" style="background:#C8E6C9;">Descripción</div>
+          <div class="mini-excel-cell" style="background:#C8E6C9;">Cantidad</div>
+          <div class="mini-excel-cell" style="background:#C8E6C9;">PRESENTACION</div>
+          <div class="mini-excel-cell" style="background:#C8E6C9;">Fuente de Financiamiento</div>
+          <div class="mini-excel-cell" style="background:#C8E6C9;">Año de Recepción</div>
+          <div class="mini-excel-cell" style="background:#C8E6C9;">Lote</div>
+          <div class="mini-excel-cell" style="background:#C8E6C9;">Orden de suministro</div>
+        </div>
+      </div>
+
+      <div class="legend-grid">
+        <div class="legend-card">
+          <div class="legend-swatch swatch-control">#FFF9C4</div>
+          <div class="legend-title">🟨 Control</div>
+          <div class="legend-cols">
+            <em>No. · Fecha Alta · Código · Nota · DESTINO</em><br>
+            Datos administrativos del registro.
+          </div>
+        </div>
+
+        <div class="legend-card">
+          <div class="legend-swatch swatch-paciente">#BBDEFB</div>
+          <div class="legend-title">🟦 Paciente</div>
+          <div class="legend-cols">
+            <em>Expediente · Apellidos · Nombre(s) · CURP · Nacimiento · Sexo · Seg. Social</em><br>
+            Identificación del paciente.
+          </div>
+        </div>
+
+        <div class="legend-card">
+          <div class="legend-swatch swatch-diag">#E1BEE7</div>
+          <div class="legend-title">🟪 Diagnóstico</div>
+          <div class="legend-cols">
+            <em>INTERVENCION · DIAGNOSTICO · FASE · ESTATUS · Fechas · SADMI</em><br>
+            Información clínica y de seguimiento.
+          </div>
+        </div>
+
+        <div class="legend-card">
+          <div class="legend-swatch swatch-insumo">#C8E6C9</div>
+          <div class="legend-title">🟩 Insumo / CNIS</div>
+          <div class="legend-cols">
+            <em>Clave CNIS · Descripción · Cantidad · Presentación · Lote · Fuente</em><br>
+            Medicamentos y material de consumo.
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size: 12px; color: #9e9e9e; padding: 10px 14px; background: #1a1a1a; border-radius: var(--radius-sm); border-left: 3px solid var(--gold);">
+        💡 <strong style="color:#ffca28;">Tip:</strong> cuando exportes, las columnas de un mismo color quedan contiguas.
+        En Excel, selecciona el rango completo del bloque, <kbd style="background:#2c2c2c; color:#fff; padding:2px 6px; border-radius:3px; font-size:10px;">Ctrl+C</kbd> y pégalo en tu archivo con candados usando <kbd style="background:#2c2c2c; color:#fff; padding:2px 6px; border-radius:3px; font-size:10px;">Pegado especial → Valores</kbd>.
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function actualizarNombre(inputId, wrapId, faceId) {
+    const input = document.getElementById(inputId);
+    const span = document.getElementById(faceId.replace('face', 'nombre'));
+    span.textContent = input.files.length ? input.files[0].name.slice(0, 36) : 'Seleccionar .xlsx';
+  }
+
+  function setStatus(statusId, tipo, mensaje) {
+    const bar = document.getElementById(statusId);
+    bar.className = 'status-bar visible ' + tipo;
+    bar.innerHTML = mensaje;
+    if (tipo === 'success') setTimeout(() => bar.classList.remove('visible'), 5000);
+  }
+
+  function subirArchivo(inputId, urlDestino, btnId, statusId) {
+    const fileInput = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    if (!fileInput.files.length) return setStatus(statusId, 'error', 'Selecciona un archivo.');
+
+    const formData = new FormData();
+    formData.append('archivo', fileInput.files[0]);
+    btn.disabled = true;
+    setStatus(statusId, 'loading', 'Procesando en el servidor...');
+
+    fetch(urlDestino, { method: 'POST', body: formData })
+      .then(async res => { if (!res.ok) throw new Error(await res.text()); return res.json(); })
+      .then(data => {
+        btn.disabled = false;
+        if (data.estatus === 'exito') {
+          setStatus(statusId, 'success', data.mensaje);
+          fileInput.value = '';
+          document.getElementById(btnId.replace('btn', 'nombre')).textContent = 'Seleccionar .xlsx';
+        } else setStatus(statusId, 'error', data.mensaje);
+      })
+      .catch(err => { btn.disabled = false; setStatus(statusId, 'error', err.message); });
+  }
+</script>
+</body>
+</html>

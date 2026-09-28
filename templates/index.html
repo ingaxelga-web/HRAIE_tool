@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHGD · HRAEI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #121212; --surface: #1e1e1e; --surface-2: #2c2c2c;
+      --border: #333; --border-hi: #444;
+      --purple: #C5A3E1; --purple-dark: #6a1b9a; --purple-accent: #ce93d8;
+      --violet: #ab47bc; --blue: #64b5f6; --green: #81c784;
+      --gold: #fbbf24; --red: #e57373;
+      --text: #e0e0e0; --text-2: #b0bec5; --text-3: #757575;
+    }
+    body { background: var(--bg); color: var(--text); padding-bottom: 50px; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    .card { background: var(--surface) !important; border: 1px solid var(--border); border-radius: 10px; }
+    .panel { background: #242424; border: 1px solid var(--border); }
+
+    .form-section { position: relative; z-index: 1; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; background: var(--surface); transition: border-color .2s; }
+    .form-section:focus-within { z-index: 100; }
+    .form-section.is-active { border-color: var(--purple); }
+    .form-section.is-done   { border-color: rgba(129,199,132,.35); }
+
+    .form-section-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; user-select: none; background: #232323; border-radius: 10px 10px 0 0; transition: background .15s, border-radius .2s; }
+    .form-section-head:hover { background: #282828; }
+    .form-section.is-active .form-section-head { background: #2a1f33; }
+    .form-section.is-done .form-section-head { background: #1f2620; }
+    .form-section.collapsed .form-section-head { border-radius: 10px; }
+
+    .sec-num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border-hi); font-size: .72rem; font-weight: 700; color: var(--text-3); flex-shrink: 0; }
+    .form-section.is-active .sec-num { background: rgba(197,163,225,.15); border-color: var(--purple); color: var(--purple); }
+    .form-section.is-done .sec-num { background: rgba(129,199,132,.15); border-color: var(--green); color: var(--green); }
+
+    .sec-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #fff; flex-shrink: 0; }
+    .sec-summary { flex: 1; font-size: .78rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+    .form-section:not(.collapsed) .sec-summary { display: none; }
+    .form-section.is-done .sec-summary { color: var(--green); }
+    .sec-status { font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; flex-shrink: 0; letter-spacing: .3px; }
+    .sec-status.empty   { background: rgba(255,255,255,.06); color: var(--text-3); }
+    .sec-status.partial { background: rgba(251,191,36,.12); color: var(--gold); }
+    .sec-status.done    { background: rgba(129,199,132,.15); color: var(--green); }
+    .sec-caret { color: var(--text-3); transition: transform .2s; flex-shrink: 0; }
+    .form-section.collapsed .sec-caret { transform: rotate(-90deg); }
+    .form-section-body { padding: 20px 16px; border-top: 1px solid var(--border); animation: fadeIn .18s ease; }
+    .form-section.collapsed .form-section-body { display: none; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } }
+
+    .form-control, .form-select { background: var(--surface-2) !important; border: 1px solid var(--border-hi) !important; color: #fff !important; }
+    .form-control:focus, .form-select:focus { background: #2a2a35 !important; border-color: var(--purple) !important; box-shadow: 0 0 0 .25rem rgba(197,163,225,.25) !important; color: #fff !important; }
+    .form-control[readonly], .form-control:disabled, .form-select:disabled { background: #1a1a1a !important; color: #9e9e9e !important; cursor: not-allowed; }
+    .form-control-sm, .form-select-sm { font-size: .85rem; border-radius: 5px; }
+    label { font-size: .72rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; margin-bottom: 4px; }
+    .highlight-input { border-color: var(--purple) !important; background: #291b33 !important; }
+    ::placeholder { color: var(--text-3) !important; opacity: 1; }
+
+    .btn-purple { background: var(--purple); color: #fff; border: none; }
+    .btn-purple:hover { background: var(--purple-dark); color: #fff; }
+    .btn-outline-purple { color: var(--purple); border-color: var(--purple); }
+    .btn-outline-purple:hover { background: var(--purple); color: #1a1818; }
+    .btn-icon-clear { background: transparent; color: var(--red); border: 1px solid var(--border-hi); font-weight: 700; z-index: 1; }
+    .btn-icon-clear:hover:not(:disabled) { background: var(--red); color: #fff; border-color: var(--red); }
+    .btn-icon-clear:disabled { opacity: .4; cursor: not-allowed; }
+    .text-main-title { color: var(--purple-accent) !important; }
+
+    .help { display: block; font-size: .75rem; font-weight: 700; margin-top: 4px; color: var(--text-3); }
+    .help.ok    { color: var(--green); }
+    .help.warn  { color: var(--gold); }
+    .help.err   { color: var(--red); }
+    .help.info  { color: var(--purple-accent); }
+
+    .custom-dropdown { position: absolute; top: 100%; left: 0; z-index: 1050; display: none; width: 100%; max-height: 250px; overflow-y: auto; background: var(--surface-2); border: 1px solid var(--border-hi); border-radius: 6px; padding: 0; margin: 4px 0 0; box-shadow: 0 4px 6px rgba(0,0,0,.5); }
+    .custom-dropdown.show { display: block; }
+    .custom-dropdown li { list-style: none; border-bottom: 1px solid #3a3a3a; }
+    .custom-dropdown li:last-child { border-bottom: none; }
+    .custom-dropdown li a { display: block; padding: 10px 12px; color: #fff !important; text-decoration: none; font-size: .8rem; cursor: pointer; }
+    .custom-dropdown li a:hover, .custom-dropdown li a:focus { background: var(--violet) !important; color: #fff !important; }
+
+    .seccion-medica { transition: opacity .3s ease; }
+
+    .preview-card { background: #1a1a1a; border: 1px dashed var(--border-hi); border-radius: 10px; padding: 16px; margin-top: 8px; }
+    .preview-card h6 { font-size: .72rem; font-weight: 700; letter-spacing: .5px; color: var(--purple-accent); text-transform: uppercase; margin-bottom: 12px; }
+    .audit-list { display: flex; flex-direction: column; gap: 8px; }
+    .audit-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 6px; background: #1f1f1f; border-left: 4px solid var(--text-3); transition: border-color .2s, background .2s; }
+    .audit-item.ok   { border-left-color: var(--green); background: rgba(129,199,132,.06); }
+    .audit-item.warn { border-left-color: var(--gold);  background: rgba(251,191,36,.06); }
+    .audit-item.err  { border-left-color: var(--red);   background: rgba(229,115,115,.06); }
+    .audit-item.info { border-left-color: var(--purple-accent); background: rgba(206,147,216,.04); }
+    .audit-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--text-3); margin-top: 6px; flex-shrink: 0; }
+    .audit-item.ok   .audit-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .audit-item.warn .audit-dot { background: var(--gold);  box-shadow: 0 0 6px var(--gold); }
+    .audit-item.err  .audit-dot { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+    .audit-item.info .audit-dot { background: var(--purple-accent); }
+    .audit-title { font-size: .68rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--text-3); }
+    .audit-title small { font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text-3); opacity: .7; }
+    .audit-detail { font-size: .82rem; color: var(--text-2); margin-top: 2px; line-height: 1.35; }
+    .audit-detail strong { color: #fff; }
+    .audit-detail code { color: var(--purple-accent); background: rgba(206,147,216,.12); padding: 1px 5px; border-radius: 3px; font-size: .78rem; }
+
+    .toolbar { display: flex; gap: 8px; justify-content: space-between; margin-bottom: 12px; }
+    .btn-mini { font-size: .72rem; font-weight: 700; padding: 4px 10px; border: 1px solid var(--border-hi); background: transparent; color: var(--text-2); border-radius: 6px; cursor: pointer; transition: all .15s; }
+    .btn-mini:hover { border-color: var(--purple); color: var(--purple); }
+  </style>
+</head>
+<body>
+
+<div class="container mt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="text-main-title fw-bold m-0">SISTEMA HRAEI</h3>
+    <a href="/admin" class="btn btn-outline-purple btn-sm fw-bold">Administración</a>
+  </div>
+
+  <div class="card p-4 shadow-sm">
+    <form id="formCaptura">
+
+      <div class="toolbar">
+        <div>
+           <button type="button" class="btn btn-warning btn-sm fw-bold" id="btnCargarBorrador">
+               📥 Cargar pendiente del Excel
+           </button>
+           <span id="borradorStatus" style="font-size:12px; color:var(--gold); margin-left:10px; font-weight: bold;"></span>
+        </div>
+        <div>
+            <button type="button" class="btn-mini" id="btnExpandirTodo">Expandir todo</button>
+            <button type="button" class="btn-mini" id="btnContraerTodo">Contraer todo</button>
+        </div>
+      </div>
+
+      <!-- ═══ SECCIÓN 1: DATOS DEL PACIENTE ═══════════════ -->
+      <section class="form-section is-active" id="sec-paciente" data-section="paciente">
+        <header class="form-section-head" data-toggle="sec-paciente">
+          <span class="sec-num">1</span>
+          <span class="sec-title">Datos del Paciente</span>
+          <span class="sec-summary"></span>
+          <span class="sec-status empty">Pendiente</span>
+          <svg class="sec-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </header>
+        <div class="form-section-body">
+
+          <div class="row g-3 mb-3 p-3 panel rounded">
+            <div class="col-md-12">
+              <label style="color: var(--purple-accent);">Nombre completo (Busca en historial)</label>
+              <div class="position-relative">
+                  <input type="text" class="form-control form-control-sm text-uppercase highlight-input"
+                         id="nombre_completo_auto" placeholder="Escribe para buscar paciente anterior...">
+                  <button class="btn btn-icon-clear" type="button" id="btnLimpiarNombre" style="position: absolute; right: 0; top: 0; height: 100%;">X</button>
+              </div>
+            </div>
+            <div class="col-md-4"><label>Nombre(s)</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="nombres" maxlength="20" required></div>
+            <div class="col-md-4"><label>Apellido Paterno</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="ap_paterno" maxlength="20"></div>
+            <div class="col-md-4"><label>Apellido Materno</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="ap_materno" maxlength="20"></div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-3"><label>CURP (Duplica en Expediente)</label>
+              <div class="position-relative">
+                  <input type="text" class="form-control form-control-sm text-uppercase highlight-input" id="curp" maxlength="18" autocomplete="off" placeholder="Busca o escribe...">
+              </div>
+            </div>
+            <div class="col-md-3"><label>Expediente (Espejo de CURP)</label>
+              <div class="position-relative">
+                  <input type="text" class="form-control form-control-sm text-uppercase" id="expediente" maxlength="18" required placeholder="Busca o escribe...">
+              </div>
+            </div>
+            <div class="col-md-2"><label>Nacimiento</label>
+              <input type="date" class="form-control form-control-sm" id="fecha_nacimiento" readonly></div>
+            <div class="col-md-1"><label>Edad</label>
+              <input type="number" class="form-control form-control-sm" id="edad_dx" readonly></div>
+            <div class="col-md-1"><label>Sexo</label>
+              <select class="form-select form-select-sm" id="sexo">
+                <option value="">-</option><option value="H">H</option><option value="M">M</option>
+              </select></div>
+            <div class="col-md-2"><label>Seg. Social</label>
+              <select class="form-select form-select-sm" id="seguridad_social">
+                <option value="">-</option><option value="SI">SI</option><option value="NO">NO</option>
+              </select></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ SECCIÓN 2: ATENCIÓN MÉDICA ══════════════════ -->
+      <section class="form-section" id="sec-atencion" data-section="atencion">
+        <header class="form-section-head" data-toggle="sec-atencion">
+          <span class="sec-num">2</span>
+          <span class="sec-title">Atención Médica</span>
+          <span class="sec-summary"></span>
+          <span class="sec-status empty">Pendiente</span>
+          <svg class="sec-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </header>
+        <div class="form-section-body">
+
+          <div class="d-flex gap-2 mb-3 border-bottom border-secondary pb-3">
+            <button type="button" class="btn btn-purple btn-sm fw-bold btn-tab"
+                    onclick="cambiarSeccionMedica('gc', this)">GASTOS CATASTRÓFICOS</button>
+            <button type="button" class="btn btn-outline-purple btn-sm fw-bold btn-tab"
+                    onclick="cambiarSeccionMedica('cie10', this)">CIE 10</button>
+            <button type="button" class="btn btn-outline-purple btn-sm fw-bold btn-tab"
+                    onclick="cambiarSeccionMedica('sadmi', this)">SADMI</button>
+          </div>
+
+          <!-- GC -->
+          <div id="seccion_gc" class="seccion-medica">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label>Diagnóstico Médico</label>
+                <input type="text" class="form-control form-control-sm text-uppercase"
+                       id="dx_medicos" placeholder="Ej. PREMATUREZ EXTREMA">
+              </div>
+              <div class="col-md-6">
+                <label>Gastos Catastróficos</label>
+                <div class="input-group input-group-sm position-relative">
+                  <input type="text" class="form-control form-control-sm text-uppercase highlight-input"
+                         id="intervencion" placeholder="Escribe para filtrar..." autocomplete="off">
+                  <button class="btn btn-icon-clear" type="button" id="btnLimpiarGC">X</button>
+                </div>
+                <small id="dx_ayuda" class="help"></small>
+              </div>
+              <div class="col-md-6">
+                <label>Descripción CIE-10</label>
+                <div class="input-group input-group-sm position-relative">
+                  <input type="text" class="form-control text-uppercase"
+                         id="diagnostico" placeholder="Despliega la lista o escribe..." autocomplete="off">
+                  <button class="btn btn-icon-clear" type="button" id="btnLimpiarCie10">X</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CIE-10 -->
+          <div id="seccion_cie10" class="seccion-medica d-none">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label>Diagnóstico Médico</label>
+                <div class="position-relative">
+                  <input type="text" class="form-control form-control-sm text-uppercase highlight-input"
+                         id="dx_medicos_cie10" placeholder="Ej. OTRAS ARTROSIS" autocomplete="off">
+                </div>
+              </div>
+              <div class="col-md-12">
+                <label>Descripción CIE-10</label>
+                <div class="input-group input-group-sm position-relative">
+                  <input type="text" class="form-control text-uppercase"
+                         id="diagnostico_cie10" placeholder="Primero selecciona una categoría..." autocomplete="off" disabled>
+                  <button class="btn btn-icon-clear" type="button" id="btnLimpiarCie10_tab">X</button>
+                </div>
+                <small id="dx_ayuda_cie10" class="help ok">✓ Filtrado estricto por categoría.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- SADMI -->
+          <div id="seccion_sadmi" class="seccion-medica d-none">
+            <div class="row g-3">
+              <div class="col-md-12">
+                <label>Diagnóstico Médico</label>
+                <input type="text" class="form-control form-control-sm text-uppercase"
+                       id="dx_medicos_sadmi" placeholder="Ej. ESCLEROSIS MULTIPLE">
+              </div>
+              <div class="col-md-12">
+                <label>Intervención SADMI</label>
+                <div class="input-group input-group-sm position-relative">
+                  <input type="text" class="form-control form-control-sm text-uppercase highlight-input"
+                         id="intervencion_sadmi" placeholder="Despliega la lista..." autocomplete="off">
+                  <button class="btn btn-icon-clear" type="button" id="btnLimpiarSadmiIntervencion">X</button>
+                </div>
+              </div>
+              <div class="col-md-12">
+                <label>Diagnóstico SADMI</label>
+                <div class="input-group input-group-sm position-relative">
+                  <input type="text" class="form-control text-uppercase"
+                         id="diagnostico_sadmi" placeholder="Primero selecciona una intervención..." autocomplete="off" disabled>
+                  <button class="btn btn-icon-clear" type="button" id="btnLimpiarCie10Sadmi">X</button>
+                </div>
+                <small id="dx_ayuda_sadmi" class="help ok">✓ Filtrado estricto por Intervención SADMI.</small>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ SECCIÓN 3: FECHAS Y CÓDIGO ═════════════════ -->
+      <section class="form-section" id="sec-fechas" data-section="fechas">
+        <header class="form-section-head" data-toggle="sec-fechas">
+          <span class="sec-num">3</span>
+          <span class="sec-title">Fechas y Código</span>
+          <span class="sec-summary"></span>
+          <span class="sec-status empty">Opcional</span>
+          <svg class="sec-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </header>
+        <div class="form-section-body">
+
+          <div class="row g-3">
+            <div class="col-md-4"><label>Fecha Alta</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="fecha_alta" placeholder="Ej. 20 de August de 2026..."></div>
+            <div class="col-md-4"><label>Fecha DX</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="fecha_dx" placeholder="Ej. 20/08/2026"></div>
+            <div class="col-md-4"><label>Código</label>
+              <input type="text" class="form-control form-control-sm text-uppercase highlight-input" id="codigo"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ SECCIÓN 4: MEDICAMENTOS E INSUMOS ══════════ -->
+      <section class="form-section" id="sec-insumos" data-section="insumos">
+        <header class="form-section-head" data-toggle="sec-insumos">
+          <span class="sec-num">4</span>
+          <span class="sec-title">Medicamentos e Insumos (CNIS)</span>
+          <span class="sec-summary"></span>
+          <span class="sec-status empty">Pendiente</span>
+          <svg class="sec-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </header>
+        <div class="form-section-body">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-2"><label>Clave CNIS</label>
+              <input type="text" class="form-control form-control-sm text-uppercase highlight-input" id="clave_cnis"></div>
+            <div class="col-md-3"><label>Descripción</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="descripcion_insumo"></div>
+            <div class="col-md-2"><label>Presentación</label>
+              <select class="form-select form-select-sm" id="presentacion">
+                <option value="" selected>—</option>
+                <option value="ÁMPULA(S)">Ámpula(s)</option>
+                <option value="CAJA(S)">Caja(s)</option>
+                <option value="JERINGA(S) PRELLENADA(S)">Jeringa(s) prellenada(s)</option>
+                <option value="SOBRE(S)">Sobre(s)</option>
+                <option value="ENVASE(S)">Envase(s)</option>
+                <option value="EQUIPO(S)">Equipo(s)</option>
+                <option value="FRASCO(S)">Frasco(s)</option>
+                <option value="JUEGO(S) O ESTUCHE(S)">Juego(s) o estuche(s)</option>
+                <option value="LATA(S)">Lata(s)</option>
+                <option value="PARCHE(S)">Parche(s)</option>
+                <option value="PIEZA(S)">Pieza(s)</option>
+              </select></div>
+            <div class="col-md-1"><label>Cant.</label>
+              <input type="number" class="form-control form-control-sm" id="cantidad" value="1"></div>
+            <div class="col-md-2"><label>Lote</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="lote"></div>
+            <div class="col-md-2"><label>Destino</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="destino" maxlength="70"></div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-3"><label>Orden de Suministro</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="orden_suministro"></div>
+            <div class="col-md-3"><label>Fuente de Financiamiento</label>
+              <select class="form-select form-select-sm" id="fuente_fin">
+                <option value="" selected>—</option>
+                <option value="SAEAC">SAEAC</option>
+                <option value="SADMI">SADMI</option>
+              </select></div>
+            <div class="col-md-2"><label>Año de Recepción</label>
+              <input type="number" class="form-control form-control-sm" id="anio_recepcion" min="2000" max="2100"></div>
+            <div class="col-md-4"><label>Notas</label>
+              <input type="text" class="form-control form-control-sm text-uppercase" id="nota"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══ AUDITORÍA EN VIVO ════════════════════════════ -->
+      <div class="preview-card" id="previewCard">
+        <h6>🔍 Auditoría del registro</h6>
+        <div class="audit-list">
+          <div class="audit-item info" id="aud-paciente">
+            <span class="audit-dot"></span>
+            <div class="audit-body">
+              <div class="audit-title">Paciente <small>(requiere Expediente + Nombre)</small></div>
+              <div class="audit-detail">Sin capturar</div>
+            </div>
+          </div>
+          <div class="audit-item info" id="aud-diagnostico">
+            <span class="audit-dot"></span>
+            <div class="audit-body">
+              <div class="audit-title">Diagnóstico</div>
+              <div class="audit-detail">Sin capturar</div>
+            </div>
+          </div>
+          <div class="audit-item info" id="aud-fechas">
+            <span class="audit-dot"></span>
+            <div class="audit-body">
+              <div class="audit-title">Fechas y Código <small>(opcional)</small></div>
+              <div class="audit-detail">Opcional — sin capturar</div>
+            </div>
+          </div>
+          <div class="audit-item info" id="aud-insumo">
+            <span class="audit-dot"></span>
+            <div class="audit-body">
+              <div class="audit-title">Insumo / CNIS <small>(opcional)</small></div>
+              <div class="audit-detail">Opcional — sin capturar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="mt-4 mb-4" style="border-color: var(--border-hi);">
+
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary fw-bold" id="btnLimpiarTodo">Limpiar formulario</button>
+        <button type="button" class="btn btn-purple px-5 fw-bold" id="btnGuardar">Guardar registro</button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ═══ PENDIENTES DEL EXCEL (VISTA EXTENDIDA) ═════════════════ -->
+  <div class="card p-4 shadow-sm mt-4 mb-5" style="border: 1px solid var(--purple);">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="section-title text-warning m-0">📥 Pendientes de Completar (Excel)</h6>
+      <button class="btn btn-sm btn-outline-danger fw-bold" onclick="vaciarBorradores()">🗑️ Vaciar lista</button>
+    </div>
+    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+      <table class="table table-dark table-striped table-hover table-sm table-bordered" style="font-size: .75rem; white-space: nowrap;">
+        <thead style="position: sticky; top: 0; background: #2c2c2c; z-index: 10;">
+          <tr style="color: var(--purple-accent);">
+            <th>Acción</th>
+            <th>Código</th>
+            <th>Nota</th>
+            <th>Fecha Alta</th>
+            <th>Destino</th>
+            <th>Expediente</th>
+            <th>Ap. Paterno</th>
+            <th>Ap. Materno</th>
+            <th>Nombre(s)</th>
+            <th>CURP</th>
+            <th>Diag. Médico</th>
+            <th>Int. SADMI</th>
+            <th>Diag. SADMI</th>
+            <th>Fecha DX</th>
+            <th>Clave CNIS</th>
+            <th>Descripción</th>
+            <th>Cant.</th>
+            <th>Presentación</th>
+            <th>Fuente Fin.</th>
+            <th>Lote</th>
+            <th>Orden Suministro</th>
+            <th>Estatus</th>
+          </tr>
+        </thead>
+        <tbody id="tabla_borradores"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ═══════════════════════════════════════════════════════════
+  // UTILIDADES
+  // ═══════════════════════════════════════════════════════════
+  const $ = id => document.getElementById(id);
+  const val = id => ($(id)?.value || '').trim();
+  const sinGuiones = txt => (txt || '').replace(/_/g, ' ');
+  const primerNombre = s => (s || '').substring(0, 60);
+
+  function escapeHTML(str) {
+      if (!str) return '';
+      return str.toString().replace(/[&<>'"]/g, 
+          tag => ({
+              '&': '&amp;',
+              '<': '&lt;',
+              '>': '&gt;',
+              "'": '&#39;',
+              '"': '&quot;'
+          }[tag] || tag)
+      );
+  }
+
+  let currentBorradorId = null;
+  let dataBorradoresGlobal = [];
+  let nombreDesdeServidor = false;
+
+  function prellenarValoresPorDefecto() {
+    const hoy = new Date();
+    const iso = hoy.toISOString().slice(0, 10);
+    // Ya no rellenamos fecha_alta automático porque ahora es texto que cuadra con el ticket, a menos que el usuario lo escriba
+    if ($('anio_recepcion') && !$('anio_recepcion').value) $('anio_recepcion').value = hoy.getFullYear();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // DROPDOWNS INTELIGENTES
+  // ═══════════════════════════════════════════════════════════
+  window.opcionesDropdown = {};
+  function actualizarDropdown(inputId, opciones) { window.opcionesDropdown[inputId] = opciones; }
+
+  function inicializarBuscador(inputId, callbackSeleccion = null) {
+    const input = $(inputId);
+    if(!input) return;
+    const wrapper = input.parentElement;
+    wrapper.classList.add('position-relative');
+
+    const ul = document.createElement('ul');
+    ul.className = 'custom-dropdown';
+    wrapper.appendChild(ul);
+
+    function renderOptions(filtro = '') {
+      ul.innerHTML = '';
+      const opciones = window.opcionesDropdown[inputId] || [];
+      const filtroUpper = filtro.toUpperCase();
+      let count = 0;
+      for (const opt of opciones) {
+        if (opt.toUpperCase().includes(filtroUpper)) {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.textContent = opt;
+          a.addEventListener('mousedown', e => {
+            e.preventDefault();
+            input.value = opt;
+            ul.classList.remove('show');
+            if(callbackSeleccion) {
+                callbackSeleccion(opt);
+            } else {
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+                input.dispatchEvent(new Event('blur'));
+            }
+          });
+          li.appendChild(a);
+          ul.appendChild(li);
+          if (++count > 100) break;
+        }
+      }
+      if (count === 0 && opciones.length > 0) {
+        ul.innerHTML = '<li><a class="text-muted" style="cursor:default;">Sin coincidencias...</a></li>';
+      }
+    }
+
+    const mostrar = function () {
+      if (this.readOnly || this.disabled) return;
+      const ops = window.opcionesDropdown[inputId] || [];
+      if (ops.length === 0) return;
+      renderOptions(this.value);
+      ul.classList.add('show');
+    };
+
+    input.addEventListener('focus', mostrar);
+    input.addEventListener('input', mostrar);
+    input.addEventListener('blur', () => ul.classList.remove('show'));
+  }
+
+  const casillasDropdown = ['intervencion', 'diagnostico', 'dx_medicos_cie10', 'diagnostico_cie10', 'intervencion_sadmi', 'diagnostico_sadmi'];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    casillasDropdown.forEach(id => inicializarBuscador(id));
+    
+    inicializarBuscador('nombre_completo_auto', seleccionarPacientePorNombre);
+    inicializarBuscador('curp', seleccionarPacientePorCurpOExpediente);
+    inicializarBuscador('expediente', seleccionarPacientePorCurpOExpediente);
+
+    cargarCatalogosMedicos();
+    cargarCatalogoPacientes();
+    cargarTablaBorradores();
+    prellenarValoresPorDefecto();
+    updateAllSections();
+  });
+
+  function cargarCatalogosMedicos() {
+      fetch('/obtener_intervenciones_gc').then(r => r.json()).then(data => {
+        if (data.estatus === 'exito') actualizarDropdown('intervencion', data.datos.map(sinGuiones));
+      });
+      fetch('/obtener_diagnosticos').then(r => r.json()).then(data => {
+        if (data.estatus === 'exito') actualizarDropdown('diagnostico', data.datos.map(sinGuiones));
+      });
+      fetch('/obtener_categorias_cie10').then(r => r.json()).then(data => {
+        if (data.estatus === 'exito') actualizarDropdown('dx_medicos_cie10', data.datos.map(sinGuiones));
+      });
+      fetch('/obtener_catalogo_sadmi').then(r => r.json()).then(data => {
+        if (data.estatus === 'exito') actualizarDropdown('intervencion_sadmi', data.datos.map(sinGuiones));
+      });
+  }
+
+  function cargarCatalogoPacientes() {
+      fetch('/obtener_pacientes_historial').then(r => r.json()).then(data => {
+          if(data.estatus === 'exito') {
+              actualizarDropdown('nombre_completo_auto', data.nombres);
+              actualizarDropdown('curp', data.curps);
+              actualizarDropdown('expediente', data.expedientes);
+          }
+      });
+  }
+
+  function seleccionarPacientePorNombre(nombreCompleto) {
+      fetch('/buscar_paciente_por_nombre', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nombre: nombreCompleto })
+      })
+      .then(r => r.json())
+      .then(data => {
+          if(data.estatus === 'exito') {
+              llenarFormularioConPaciente(data.datos);
+          }
+      });
+  }
+
+  function seleccionarPacientePorCurpOExpediente(valor) {
+      fetch('/buscar_paciente/' + valor)
+      .then(r => r.json())
+      .then(data => {
+          if(data.estatus === 'exito') {
+              llenarFormularioConPaciente(data.datos);
+          }
+      });
+  }
+
+  function llenarFormularioConPaciente(d) {
+      const campos = [
+          'nombres', 'ap_paterno', 'ap_materno',
+          'sexo', 'seguridad_social', 'fecha_nacimiento'
+      ];
+      campos.forEach(c => { if($(c) && d[c]) $(c).value = d[c]; });
+
+      const identificador = (d.curp || d.expediente || '').trim().toUpperCase();
+      $('curp').value = identificador;
+      $('expediente').value = identificador;
+
+      const nombreCompletoArmado = [d.ap_paterno, d.ap_materno, d.nombres].filter(Boolean).join(' ');
+      $('nombre_completo_auto').value = nombreCompletoArmado;
+      nombreDesdeServidor = true;
+
+      if(identificador && identificador.length === 18) {
+          $('curp').dispatchEvent(new Event('input'));
+      }
+      updateAllSections();
+  }
+
+  $('btnLimpiarNombre').addEventListener('click', () => {
+      $('nombre_completo_auto').value = '';
+      $('nombres').value = '';
+      $('ap_paterno').value = '';
+      $('ap_materno').value = '';
+      $('curp').value = '';
+      $('expediente').value = '';
+      updateAllSections();
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // DUPLICACIÓN EN TIEMPO REAL: CURP <--> EXPEDIENTE
+  // ═══════════════════════════════════════════════════════════
+  $('curp').addEventListener('focus', function() { this.select(); });
+
+  $('curp').addEventListener('input', function () {
+    const curp = this.value.toUpperCase();
+    this.value = curp;
+    
+    $('expediente').value = curp;
+
+    if (curp.length !== 18) {
+      $('fecha_nacimiento').value = ''; $('edad_dx').value = ''; $('sexo').value = '';
+      const ayuda = $('dx_ayuda');
+      if(ayuda && ayuda.innerText.includes('auto-llenado')) { ayuda.innerText = ''; ayuda.className = 'help'; }
+      updateAllSections();
+      return;
+    }
+    const sexoChar = curp.charAt(10);
+    if (sexoChar === 'H') $('sexo').value = 'M';
+    else if (sexoChar === 'M') $('sexo').value = 'F';
+    const añoStr = curp.substring(4, 6), mesStr = curp.substring(6, 8), diaStr = curp.substring(8, 10);
+    const digitoSiglo = curp.charAt(16);
+    const esNumero = !isNaN(parseInt(digitoSiglo));
+    const año = parseInt(añoStr) + (esNumero ? 1900 : 2000);
+    $('fecha_nacimiento').value = `${año}-${mesStr}-${diaStr}`;
+    const nac = new Date(año, parseInt(mesStr) - 1, parseInt(diaStr));
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - nac.getFullYear();
+    if (hoy.getMonth() - nac.getMonth() < 0 || (hoy.getMonth() - nac.getMonth() === 0 && hoy.getDate() < nac.getDate())) edad--;
+    $('edad_dx').value = edad;
+  });
+
+  $('expediente').addEventListener('input', function () {
+    const exp = this.value.toUpperCase();
+    this.value = exp;
+    $('curp').value = exp;
+    if (exp.length === 18) {
+      $('curp').dispatchEvent(new Event('input'));
+    } else {
+      updateAllSections();
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // TABLA INFERIOR (BORRADORES VISTA EXTENDIDA)
+  // ═══════════════════════════════════════════════════════════
+  function cargarTablaBorradores() {
+    fetch('/obtener_borradores_json').then(r => r.json()).then(data => {
+      if (data.estatus !== 'exito') return;
+      dataBorradoresGlobal = data.datos;
+      const tbody = $('tabla_borradores');
+      tbody.innerHTML = '';
+
+      if(data.datos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="22" class="text-center text-muted py-4">No hay registros pendientes. Sube un Excel desde Administración.</td></tr>';
+          return;
+      }
+
+      data.datos.forEach(reg => {
+        let faltan = [];
+        if(!reg.expediente && !reg.curp) faltan.push('Expediente/CURP');
+        if(!reg.nombres) faltan.push('Nombre(s)');
+
+        let colorFalta = faltan.length > 0 ? 'text-danger' : 'text-success';
+        let txtFalta = faltan.length > 0 ? `Falta: ${faltan.join(', ')}` : '🟢 Listo para guardar';
+
+        const clean = (val) => val ? escapeHTML(val) : '-';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><button type="button" class="btn btn-sm btn-purple py-0" onclick="cargarBorradorAlFormulario(${reg.id})">↑ Cargar</button></td>
+          <td>${clean(reg.codigo)}</td>
+          <td>${clean(reg.nota)}</td>
+          <td>${clean(reg.fecha_alta)}</td>
+          <td>${clean(reg.destino)}</td>
+          <td class="text-info fw-bold">${clean(reg.expediente)}</td>
+          <td>${clean(reg.ap_paterno)}</td>
+          <td>${clean(reg.ap_materno)}</td>
+          <td>${clean(reg.nombres)}</td>
+          <td>${clean(reg.curp)}</td>
+          <td>${clean(reg.dx_medicos)}</td>
+          <td>${clean(reg.intervencion_sadmi)}</td>
+          <td>${clean(reg.dx_sadmi)}</td>
+          <td>${clean(reg.fecha_dx)}</td>
+          <td><code>${clean(reg.clave_cnis)}</code></td>
+          <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">${clean(reg.descripcion_insumo)}</td>
+          <td>${clean(reg.cantidad)}</td>
+          <td>${clean(reg.presentacion)}</td>
+          <td class="text-primary">${clean(reg.fuente_fin)}</td>
+          <td>${clean(reg.lote)}</td>
+          <td>${clean(reg.orden_suministro)}</td>
+          <td class="${colorFalta} fw-bold">${txtFalta}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  }
+
+  function cargarBorradorAlFormulario(id) {
+      const d = dataBorradoresGlobal.find(x => x.id === id);
+      if(!d) return;
+
+      currentBorradorId = d.id;
+      $('formCaptura').reset();
+
+      const campos = [
+          'nombres', 'ap_paterno', 'ap_materno',
+          'fecha_alta', 'codigo', 'nota', 'destino', 'sexo', 'seguridad_social',
+          'fecha_nacimiento', 'fecha_dx',
+          'clave_cnis', 'descripcion_insumo', 'cantidad', 'presentacion', 'lote',
+          'orden_suministro', 'fuente_fin', 'anio_recepcion'
+      ];
+      
+      campos.forEach(c => {
+          const el = $(c);
+          if (el && d[c] !== null && d[c] !== undefined) {
+              if (el.tagName === 'SELECT') {
+                  const valToSet = String(d[c]).trim().toUpperCase();
+                  let found = false;
+                  for (let i = 0; i < el.options.length; i++) {
+                      if (el.options[i].value.toUpperCase() === valToSet || el.options[i].text.toUpperCase() === valToSet) {
+                          el.selectedIndex = i;
+                          found = true;
+                          break;
+                      }
+                  }
+                  if (!found && valToSet) {
+                      const newOpt = new Option(d[c], d[c]);
+                      el.add(newOpt);
+                      el.value = d[c];
+                  }
+              } else {
+                  el.value = d[c];
+              }
+          }
+      });
+
+      const identificadorCargado = (d.curp || d.expediente || '').trim().toUpperCase();
+      $('curp').value = identificadorCargado;
+      $('expediente').value = identificadorCargado;
+
+      const nombreCompletoArmado = [d.ap_paterno, d.ap_materno, d.nombres].filter(Boolean).join(' ');
+      $('nombre_completo_auto').value = nombreCompletoArmado;
+      nombreDesdeServidor = true;
+
+      if (d.intervencion_sadmi || d.dx_sadmi || d.intervencion === 'NO APLICA (SADMI)') {
+          document.querySelectorAll('.btn-tab')[2].click();
+          $('intervencion_sadmi').value = d.intervencion_sadmi || '';
+          $('dx_medicos_sadmi').value = d.dx_medicos || '';
+          $('diagnostico_sadmi').value = d.dx_sadmi || '';
+      } else if (d.intervencion === 'NO APLICA (CIE-10 GENERAL)' || d.dx_medicos_cie10) {
+          document.querySelectorAll('.btn-tab')[1].click();
+          $('dx_medicos_cie10').value = d.dx_medicos || '';
+          $('diagnostico_cie10').value = d.diagnostico || '';
+      } else {
+          document.querySelectorAll('.btn-tab')[0].click();
+          $('intervencion').value = d.intervencion || '';
+          $('dx_medicos').value = d.dx_medicos || '';
+          $('diagnostico').value = d.diagnostico || '';
+      }
+
+      updateAllSections();
+      document.querySelectorAll('.form-section').forEach(expandSection);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if(identificadorCargado && identificadorCargado.length === 18) {
+          $('curp').dispatchEvent(new Event('input'));
+      }
+  }
+
+  function vaciarBorradores() {
+      if(confirm("⚠️ ¿Estás seguro de vaciar la lista de pendientes? Esto NO borrará tus capturas finales, solo limpiará el Excel temporal que subiste.")) {
+          fetch('/api/borradores/vaciar', { method: 'POST' })
+          .then(r => r.json())
+          .then(data => {
+              if(data.estatus === 'exito') {
+                  cargarTablaBorradores();
+                  $('btnLimpiarTodo').click();
+                  alert("Lista vaciada.");
+              }
+          });
+      }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // SECCIONES COLAPSABLES + AUDITORÍA
+  // ═══════════════════════════════════════════════════════════
+  const SectionDefs = {
+    'sec-paciente': {
+      isComplete: () => !!val('nombres') && (!!val('expediente') || !!val('curp')),
+      isPartial:  () => ['nombres', 'ap_paterno', 'ap_materno', 'expediente', 'curp'].some(id => val(id)),
+      summary:    () => {
+        const nombre = [val('ap_paterno'), val('ap_materno'), val('nombres')].filter(Boolean).join(' ');
+        const exp = val('expediente') || val('curp');
+        if (!nombre && !exp) return '';
+        return [nombre, exp ? `EXP/CURP ${exp}` : ''].filter(Boolean).join(' · ');
+      }
+    },
+    'sec-atencion': {
+      isComplete: () => {
+        const tab = document.querySelector('.btn-purple.btn-tab')?.innerText || '';
+        if (tab.includes('GASTOS')) return !!val('diagnostico');
+        if (tab.includes('CIE 10')) return !!val('diagnostico_cie10');
+        if (tab.includes('SADMI')) return !!val('diagnostico_sadmi') || !!val('intervencion_sadmi');
+        return false;
+      },
+      isPartial: () => ['dx_medicos', 'intervencion', 'diagnostico',
+                        'dx_medicos_cie10', 'diagnostico_cie10',
+                        'dx_medicos_sadmi', 'intervencion_sadmi', 'diagnostico_sadmi'].some(id => val(id)),
+      summary: () => {
+        const tab = document.querySelector('.btn-purple.btn-tab')?.innerText || '';
+        let tag = 'GC';
+        if (tab.includes('CIE 10')) tag = 'CIE-10';
+        else if (tab.includes('SADMI')) tag = 'SADMI';
+        let diag = '';
+        if (tag === 'GC') diag = val('diagnostico') || val('intervencion');
+        else if (tag === 'CIE-10') diag = val('diagnostico_cie10') || val('dx_medicos_cie10');
+        else diag = val('diagnostico_sadmi') || val('intervencion_sadmi');
+        return diag ? `[${tag}] ${primerNombre(diag)}` : '';
+      }
+    },
+    'sec-fechas': {
+      isComplete: () => !!val('codigo'),
+      isPartial:  () => ['fecha_alta', 'fecha_dx', 'codigo'].some(id => val(id)),
+      summary:    () => {
+        const partes = [];
+        if (val('fecha_alta')) partes.push(`Alta ${val('fecha_alta')}`);
+        if (val('fecha_dx')) partes.push(`DX ${val('fecha_dx')}`);
+        if (val('codigo')) partes.push(`Cód ${val('codigo')}`);
+        return partes.join(' · ');
+      }
+    },
+    'sec-insumos': {
+      isComplete: () => !!val('clave_cnis'),
+      isPartial:  () => ['clave_cnis', 'descripcion_insumo', 'presentacion', 'lote', 'destino', 'anio_recepcion'].some(id => val(id)),
+      summary:    () => {
+        const partes = [];
+        if (val('clave_cnis')) partes.push(`CNIS ${val('clave_cnis')}`);
+        if (val('descripcion_insumo')) partes.push(primerNombre(val('descripcion_insumo')));
+        if (val('presentacion')) {
+          const pres = val('presentacion');
+          const cant = val('cantidad') || '1';
+          partes.push(`${pres} × ${cant}`);
+        }
+        return partes.join(' · ');
+      }
+    }
+  };
+
+  function collapseSection(secEl) {
+    secEl.classList.add('collapsed');
+    secEl.querySelectorAll('.custom-dropdown.show').forEach(u => u.classList.remove('show'));
+  }
+
+  function expandSection(secEl) {
+    secEl.classList.remove('collapsed');
+  }
+
+  function updateSection(secEl) {
+    const def = SectionDefs[secEl.id];
+    if (!def) return;
+    const complete = def.isComplete();
+    const partial  = def.isPartial();
+    secEl.classList.toggle('is-done', complete);
+    secEl.classList.toggle('is-active', !complete && partial);
+    const statusEl  = secEl.querySelector('.sec-status');
+    const summaryEl = secEl.querySelector('.sec-summary');
+    if (complete) {
+      statusEl.className = 'sec-status done';
+      statusEl.textContent = 'Completo';
+    } else if (partial) {
+      statusEl.className = 'sec-status partial';
+      statusEl.textContent = 'En curso';
+    } else {
+      statusEl.className = 'sec-status empty';
+      statusEl.textContent = secEl.id === 'sec-fechas' ? 'Opcional' : 'Pendiente';
+    }
+    summaryEl.textContent = complete ? def.summary() : '';
+  }
+
+  function updateAllSections() {
+    document.querySelectorAll('.form-section').forEach(updateSection);
+    updatePreview();
+  }
+
+  let lastFocusedSection = null;
+  document.getElementById('formCaptura').addEventListener('focusin', e => {
+    const sec = e.target.closest('.form-section');
+    if (!sec) return;
+    if (lastFocusedSection && lastFocusedSection !== sec) {
+      const def = SectionDefs[lastFocusedSection.id];
+      if (def && def.isComplete() && !lastFocusedSection.classList.contains('collapsed')) {
+        collapseSection(lastFocusedSection);
+      }
+    }
+    lastFocusedSection = sec;
+    expandSection(sec);
+    updateAllSections();
+  });
+
+  document.getElementById('formCaptura').addEventListener('input', updateAllSections);
+  document.getElementById('formCaptura').addEventListener('change', updateAllSections);
+
+  document.querySelectorAll('.form-section-head').forEach(head => {
+    head.addEventListener('click', e => {
+      if (e.target.closest('input, select, button')) return;
+      const sec = document.getElementById(head.dataset.toggle);
+      if (!sec) return;
+      sec.classList.toggle('collapsed');
+    });
+  });
+
+  $('btnExpandirTodo').addEventListener('click', () => { document.querySelectorAll('.form-section').forEach(expandSection); });
+  $('btnContraerTodo').addEventListener('click', () => { document.querySelectorAll('.form-section').forEach(collapseSection); });
+
+  function aplicarAudit(id, clase, html) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = 'audit-item ' + clase;
+      el.querySelector('.audit-detail').innerHTML = html;
+  }
+
+  function updatePreview() {
+      const nombre = [val('ap_paterno'), val('ap_materno'), val('nombres')].filter(Boolean).join(' ');
+      const exp = val('expediente');
+      const curp = val('curp');
+      const partesPac = [];
+      if (nombre) partesPac.push(`<strong>${nombre}</strong>`);
+      if (exp)    partesPac.push(`EXP: ${exp}`);
+      if (curp)   partesPac.push(`<code>${curp}</code>`);
+
+      let clasePac, msgPac;
+      if (exp && nombre) {
+          clasePac = 'ok';
+          msgPac = partesPac.join(' · ');
+          if (curp && curp.length !== 18) {
+              clasePac = 'warn';
+              msgPac += ' — <em style="color:var(--gold)">CURP incompleta (' + curp.length + '/18)</em>';
+          }
+      } else if (exp || nombre) {
+          clasePac = 'warn';
+          msgPac = partesPac.join(' · ') + ' — falta <strong>' + (!exp ? 'Expediente/CURP' : 'Nombre(s)') + '</strong>';
+      } else {
+          clasePac = 'err';
+          msgPac = 'Requiere <strong>Expediente/CURP</strong> y <strong>Nombre(s)</strong>';
+      }
+      aplicarAudit('aud-paciente', clasePac, msgPac);
+
+      const tab = document.querySelector('.btn-purple.btn-tab')?.innerText || '';
+      let tag = 'GC', diag = '', cat = '';
+      if (tab.includes('CIE 10'))     { tag = 'CIE-10'; diag = val('diagnostico_cie10');   cat = val('dx_medicos_cie10'); }
+      else if (tab.includes('SADMI')) { tag = 'SADMI';  diag = val('diagnostico_sadmi');   cat = val('intervencion_sadmi'); }
+      else                            { tag = 'GC';     diag = val('diagnostico');         cat = val('intervencion'); }
+
+      const partesDx = [];
+      if (cat)  partesDx.push(cat);
+      if (diag && diag !== cat) partesDx.push(`<strong>${diag}</strong>`);
+      const prefijo = `<span style="color:var(--purple-accent);font-weight:700">[${tag}]</span> `;
+
+      let claseDx, msgDx;
+      if (diag && cat)      { claseDx = 'ok';   msgDx = prefijo + partesDx.join(' → '); }
+      else if (diag || cat) { claseDx = 'warn'; msgDx = prefijo + partesDx.join(' → ') + ' — falta <strong>' + (!diag ? 'Diagnóstico' : 'Intervención') + '</strong>'; }
+      else                  { claseDx = 'err';  msgDx = 'Sin capturar'; }
+      aplicarAudit('aud-diagnostico', claseDx, msgDx);
+
+      // ── FECHAS ────────────────────────────────────────────
+      const f = [];
+      if (val('fecha_alta')) f.push(`Alta ${val('fecha_alta')}`);
+      if (val('fecha_dx'))   f.push(`DX ${val('fecha_dx')}`);
+      if (val('codigo'))     f.push(`Cód ${val('codigo')}`);
+      aplicarAudit('aud-fechas', f.length ? 'ok' : 'info',
+                   f.length ? f.join(' · ') : 'Opcional — sin capturar');
+
+      const i = [];
+      if (val('clave_cnis'))         i.push(`<code>${val('clave_cnis')}</code>`);
+      if (val('descripcion_insumo')) i.push(val('descripcion_insumo'));
+      if (val('presentacion'))       i.push(`${val('presentacion')} × ${val('cantidad') || '1'}`);
+      if (val('fuente_fin'))         i.push(`<span style="color:var(--blue)">${val('fuente_fin')}</span>`);
+      if (val('anio_recepcion'))     i.push(`Año ${val('anio_recepcion')}`);
+      aplicarAudit('aud-insumo', i.length ? 'ok' : 'info',
+                   i.length ? i.join(' · ') : 'Opcional — sin capturar');
+  }
+
+  function cambiarSeccionMedica(idSeccion, boton) {
+    document.querySelectorAll('.seccion-medica').forEach(d => d.classList.add('d-none'));
+    $('seccion_' + idSeccion).classList.remove('d-none');
+    document.querySelectorAll('.btn-tab').forEach(b => {
+      b.classList.remove('btn-purple');
+      b.classList.add('btn-outline-purple');
+    });
+    boton.classList.remove('btn-outline-purple');
+    boton.classList.add('btn-purple');
+    updateAllSections();
+  }
+
+  document.querySelectorAll('input[type="text"]').forEach(input => {
+    input.addEventListener('paste', e => {
+      e.preventDefault();
+      const raw = (e.clipboardData || window.clipboardData).getData('text/plain') || '';
+      const limpio = raw.replace(/[\r\n\t]+/g, ' ').replace(/[\u00A0\u200B\uFEFF]/g, ' ').replace(/\s{2,}/g, ' ').trim();
+      const start = input.selectionStart;
+      const end   = input.selectionEnd;
+      input.value = input.value.slice(0, start) + limpio + input.value.slice(end);
+      input.setSelectionRange(start + limpio.length, start + limpio.length);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
+
+  $('nombre_completo_auto').addEventListener('blur', function () {
+    if (nombreDesdeServidor) { nombreDesdeServidor = false; return; }
+    const texto = this.value.trim().toUpperCase();
+    if (!texto) return;
+    const conectores = ['DE', 'DEL', 'LA', 'LAS', 'LOS', 'Y', 'MAC', 'MC', 'VAN', 'VON'];
+    const agrupados = [];
+    let temporal = '';
+    for (const p of texto.split(/\s+/)) {
+      if (conectores.includes(p)) temporal += p + ' ';
+      else { agrupados.push(temporal + p); temporal = ''; }
+    }
+    if (temporal) agrupados[agrupados.length - 1] += ' ' + temporal.trim();
+    let nombres = '', apPaterno = '', apMaterno = '';
+    if (agrupados.length === 1) nombres = agrupados[0];
+    else if (agrupados.length === 2) { nombres = agrupados[0]; apPaterno = agrupados[1]; }
+    else if (agrupados.length === 3) { nombres = agrupados[0]; apPaterno = agrupados[1]; apMaterno = agrupados[2]; }
+    else if (agrupados.length >= 4) { apMaterno = agrupados.pop(); apPaterno = agrupados.pop(); nombres = agrupados.join(' '); }
+    $('nombres').value = nombres.substring(0, 20);
+    $('ap_paterno').value = apPaterno.substring(0, 20);$('ap_materno').value = apMaterno.substring(0, 20);
+    updateAllSections();
+  });
+
+  const inputCie10 = $('diagnostico');
+  const inputIntervencion = $('intervencion');
+  const textoAyuda = $('dx_ayuda');
+  const btnLimpiarGC = $('btnLimpiarGC');
+  const btnLimpiarCie10 = $('btnLimpiarCie10');
+
+  function bloquearCie10(bloqueado) {
+    if (bloqueado) {
+      inputCie10.setAttribute('readonly', true); inputCie10.style.backgroundColor = '#1a1a1a'; btnLimpiarCie10.disabled = true;
+    } else {
+      inputCie10.removeAttribute('readonly'); inputCie10.style.backgroundColor = '#2c2c2c'; btnLimpiarCie10.disabled = false;
+    }
+  }
+
+  inputIntervencion.addEventListener('change', function () {
+    const textoGC = this.value.trim();
+    if (textoGC.length <= 3) return;
+    textoAyuda.className = 'help info'; textoAyuda.innerText = 'Buscando CIE-10 para la intervención...';
+    fetch('/sugerir_cie10', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto: textoGC }) })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.opciones || data.opciones.length === 0) {
+        textoAyuda.className = 'help err'; textoAyuda.innerText = '🚧 No se encontró GC automático. Puedes llenar los datos manualmente.';
+        bloquearCie10(false); return;
+      }
+      actualizarDropdown('diagnostico', data.opciones.map(sinGuiones));
+      if (data.intervencion === '') return;
+      inputIntervencion.value = sinGuiones(data.intervencion);
+      if (data.diagnostico_exacto !== '') {
+        inputCie10.value = sinGuiones(data.diagnostico_exacto); bloquearCie10(true);
+        textoAyuda.className = 'help ok'; textoAyuda.innerText = '🎯 GC encontrado. CIE-10 bloqueado por seguridad.';
+      } else {
+        bloquearCie10(false); inputCie10.value = '';
+        textoAyuda.className = 'help warn'; textoAyuda.innerText = '✨ GC encontrado, selecciona el CIE-10 correcto.'; inputCie10.focus();
+      }
+      updateAllSections();
+    }).catch(err => console.error('Error al sugerir:', err));
+  });
+
+  btnLimpiarGC.addEventListener('click', () => {
+    inputIntervencion.value = ''; inputCie10.value = ''; bloquearCie10(false);
+    textoAyuda.innerText = ''; textoAyuda.className = 'help'; inputIntervencion.focus();
+    updateAllSections();
+  });
+
+  btnLimpiarCie10.addEventListener('click', function () {
+    if (this.disabled) return;
+    inputCie10.value = ''; inputCie10.focus(); updateAllSections();
+  });
+
+  $('dx_medicos_cie10').addEventListener('change', function () {
+    const categoria = this.value.trim();
+    const inputDiag = $('diagnostico_cie10');
+    const ayuda = $('dx_ayuda_cie10');
+    inputDiag.value = ''; actualizarDropdown('diagnostico_cie10', []);
+    if (categoria === '') {
+      inputDiag.disabled = true; inputDiag.placeholder = 'Primero selecciona una categoría...';
+      ayuda.className = 'help ok'; ayuda.innerText = '✓ Filtrado estricto por categoría.';
+      updateAllSections(); return;
+    }
+    inputDiag.disabled = true; ayuda.className = 'help info'; ayuda.innerText = 'Cargando subcategorías exactas...';
+    fetch('/obtener_subcategorias_cie10', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ categoria }) })
+    .then(r => r.json())
+    .then(data => {
+      if (data.estatus === 'exito' && data.datos.length > 0) {
+        actualizarDropdown('diagnostico_cie10', data.datos.map(sinGuiones));
+        inputDiag.disabled = false; inputDiag.placeholder = 'Haz clic para seleccionar descripción...';
+        ayuda.className = 'help ok'; ayuda.innerText = '✓ Mostrando opciones vinculadas a esta categoría.'; inputDiag.focus();
+      } else {
+        ayuda.className = 'help err'; ayuda.innerText = 'Categoría no encontrada. Selecciona una de la lista.';
+      }
+      updateAllSections();
+    });
+  });
+
+  $('btnLimpiarCie10_tab').addEventListener('click', () => {
+    $('dx_medicos_cie10').value = ''; const inputDiag =$('diagnostico_cie10');
+    inputDiag.value = ''; inputDiag.disabled = true; inputDiag.placeholder = 'Primero selecciona una categoría...';
+    const ayuda = $('dx_ayuda_cie10'); ayuda.className = 'help ok'; ayuda.innerText = '✓ Filtrado estricto por categoría.';
+    actualizarDropdown('diagnostico_cie10', []); $('dx_medicos_cie10').focus(); updateAllSections();
+  });
+
+  $('intervencion_sadmi').addEventListener('change', function () {
+    const intervencion = this.value.trim();
+    const inputDiag = $('diagnostico_sadmi');
+    const ayuda = $('dx_ayuda_sadmi');
+    inputDiag.value = ''; actualizarDropdown('diagnostico_sadmi', []);
+    if (intervencion === '') {
+      inputDiag.disabled = true; inputDiag.placeholder = 'Primero selecciona una intervención...';
+      ayuda.className = 'help ok'; ayuda.innerText = '✓ Filtrado estricto por Intervención SADMI.';
+      updateAllSections(); return;
+    }
+    inputDiag.disabled = true; ayuda.className = 'help info'; ayuda.innerText = 'Cargando diagnósticos permitidos...';
+    fetch('/obtener_subcategorias_sadmi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ intervencion }) })
+    .then(r => r.json())
+    .then(data => {
+      inputDiag.disabled = false;
+      if (data.estatus === 'exito' && data.datos && data.datos.length > 0) {
+        actualizarDropdown('diagnostico_sadmi', data.datos.map(sinGuiones));
+        inputDiag.placeholder = 'Haz clic para seleccionar descripción...';
+        ayuda.className = 'help ok'; ayuda.innerText = '✓ Mostrando diagnósticos vinculados a la intervención.';
+      } else {
+        inputDiag.placeholder = 'Escribe el diagnóstico CIE-10 libremente...';
+        ayuda.className = 'help warn'; ayuda.innerText = '⚠ Esta intervención no tiene CIE-10 específicos. Captura libre permitida.';
+      }
+      inputDiag.focus(); updateAllSections();
+    }).catch(() => {
+      inputDiag.disabled = false; ayuda.className = 'help err'; ayuda.innerText = 'Error de conexión. Permitiendo captura manual.';
+    });
+  });
+
+  $('btnLimpiarSadmiIntervencion').addEventListener('click', () => {
+    $('intervencion_sadmi').value = ''; const inputDiag =$('diagnostico_sadmi');
+    inputDiag.value = ''; inputDiag.disabled = true; inputDiag.placeholder = 'Primero selecciona una intervención...';
+    const ayuda = $('dx_ayuda_sadmi'); ayuda.className = 'help ok'; ayuda.innerText = '✓ Filtrado estricto por Intervención SADMI.';
+    actualizarDropdown('diagnostico_sadmi', []); $('intervencion_sadmi').focus(); updateAllSections();
+  });
+
+  $('btnLimpiarCie10Sadmi').addEventListener('click', () => {
+    const inputDiag = $('diagnostico_sadmi'); if (inputDiag.disabled) return;
+    inputDiag.value = ''; inputDiag.focus(); updateAllSections();
+  });
+
+  $('btnLimpiarTodo').addEventListener('click', () => {$('formCaptura').reset();
+    currentBorradorId = null;
+
+    textoAyuda.innerText = ''; textoAyuda.className = 'help';
+    const ayudaCie10 = $('dx_ayuda_cie10'); ayudaCie10.className = 'help ok'; ayudaCie10.innerText = '✓ Filtrado estricto por categoría.';
+    const ayudaSadmi = $('dx_ayuda_sadmi'); ayudaSadmi.className = 'help ok'; ayudaSadmi.innerText = '✓ Filtrado estricto por Intervención SADMI.';
+    bloquearCie10(false); $('diagnostico_cie10').disabled = true; $('diagnostico_sadmi').disabled = true;
+    actualizarDropdown('diagnostico_cie10', []); actualizarDropdown('diagnostico_sadmi', []);
+    document.querySelectorAll('.form-section').forEach(expandSection);
+    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('is-active', 'is-done'));
+    $('sec-paciente').classList.add('is-active'); lastFocusedSection = null;
+    prellenarValoresPorDefecto(); updateAllSections();
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // GUARDAR
+  // ═══════════════════════════════════════════════════════════
+  $('btnGuardar').addEventListener('click', () => {
+    const exp = val('expediente');
+    const curp = val('curp');
+    if (!exp && !curp) {
+        alert('Debes ingresar al menos el Expediente o la CURP.'); $('expediente').focus(); return;
+    }
+    const datos = {};
+    document.querySelectorAll('#formCaptura input, #formCaptura select').forEach(i => { datos[i.id] = i.value.trim(); });
+
+    const idFinal = (curp || exp).toUpperCase();
+    datos.curp = idFinal;
+    datos.expediente = idFinal;
+
+    if (currentBorradorId) datos.borrador_id = currentBorradorId;
+
+    const tabActiva = document.querySelector('.btn-purple.btn-tab').innerText;
+    if (tabActiva.includes('GASTOS CATASTRÓFICOS')) {
+      datos.dx_medicos = val('dx_medicos'); datos.intervencion = val('intervencion'); datos.diagnostico = val('diagnostico');
+      datos.intervencion_sadmi = ''; datos.dx_sadmi = '';
+    } else if (tabActiva.includes('CIE 10')) {
+      datos.dx_medicos = val('dx_medicos_cie10'); datos.diagnostico = val('diagnostico_cie10');
+      datos.intervencion = 'NO APLICA (CIE-10 GENERAL)'; datos.intervencion_sadmi = ''; datos.dx_sadmi = '';
+    } else if (tabActiva.includes('SADMI')) {
+      datos.dx_medicos = val('dx_medicos_sadmi'); datos.diagnostico = 'NO APLICA (SADMI)';
+      datos.intervencion = 'NO APLICA (SADMI)'; datos.intervencion_sadmi = val('intervencion_sadmi'); datos.dx_sadmi = val('diagnostico_sadmi');
+    }
+
+    if (!datos.nombres) {
+      alert('El campo Nombre(s) es obligatorio.'); $('nombres').focus(); return;
+    }
+
+    fetch('/guardar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) })
+    .then(r => r.json())
+    .then(data => {
+      if (data.estatus === 'exito') {
+        cargarTablaBorradores();
+
+        if (currentBorradorId) {
+            $('btnLimpiarTodo').click();
+            alert('✅ Registro guardado. Los datos se copiaron a las demás filas de este paciente en la tabla inferior.');
+        } else {
+            alert('Guardado correctamente.');
+            ['clave_cnis', 'descripcion_insumo', 'presentacion', 'lote'].forEach(id => $(id).value = '');
+            $('cantidad').value = '1';$('clave_cnis').focus();
+            updateAllSections();
+        }
+      } else {
+        alert('Error: ' + data.mensaje);
+      }
+    })
+    .catch(() => alert('Error al guardar. Verifique su conexión.'));
+  });
+
+  // CARGAR SIGUIENTE DEL EXCEL
+  $('btnCargarBorrador').addEventListener('click', () => {
+      fetch('/api/siguiente_borrador')
+      .then(r => r.json())
+      .then(data => {
+          if (data.estatus === 'exito') {
+              const d = data.datos;
+              currentBorradorId = d.id;
+              $('borradorStatus').innerText = `Procesando fila ${d.id}. Quedan: ${data.restantes} pendientes.`;
+
+              const campos = [
+                  'nombres', 'ap_paterno', 'ap_materno',
+                  'fecha_alta', 'codigo', 'nota', 'destino', 'sexo', 'seguridad_social',
+                  'fecha_nacimiento', 'fecha_dx',
+                  'clave_cnis', 'descripcion_insumo', 'cantidad', 'presentacion', 'lote',
+                  'orden_suministro', 'fuente_fin', 'anio_recepcion'
+              ];
+              
+              campos.forEach(c => {
+                  const el = $(c);
+                  if (el && d[c] !== null && d[c] !== undefined) {
+                      if (el.tagName === 'SELECT') {
+                          const valToSet = String(d[c]).trim().toUpperCase();
+                          let found = false;
+                          for (let i = 0; i < el.options.length; i++) {
+                              if (el.options[i].value.toUpperCase() === valToSet || el.options[i].text.toUpperCase() === valToSet) {
+                                  el.selectedIndex = i;
+                                  found = true;
+                                  break;
+                              }
+                          }
+                          if (!found && valToSet) {
+                              const newOpt = new Option(d[c], d[c]);
+                              el.add(newOpt);
+                              el.value = d[c];
+                          }
+                      } else {
+                          el.value = d[c];
+                      }
+                  }
+              });
+
+              const identificadorCargado = (d.curp || d.expediente || '').trim().toUpperCase();
+              $('curp').value = identificadorCargado;
+              $('expediente').value = identificadorCargado;
+
+              const nombreCompletoArmado = [d.ap_paterno, d.ap_materno, d.nombres].filter(Boolean).join(' ');
+              $('nombre_completo_auto').value = nombreCompletoArmado;
+              nombreDesdeServidor = true;
+
+              if (d.intervencion_sadmi || d.dx_sadmi || d.intervencion === 'NO APLICA (SADMI)') {
+                  document.querySelectorAll('.btn-tab')[2].click();
+                  $('intervencion_sadmi').value = d.intervencion_sadmi || '';
+                  $('dx_medicos_sadmi').value = d.dx_medicos || '';$('diagnostico_sadmi').value = d.dx_sadmi || '';
+              } else if (d.intervencion === 'NO APLICA (CIE-10 GENERAL)' || d.dx_medicos_cie10) {
+                  document.querySelectorAll('.btn-tab')[1].click();
+                  $('dx_medicos_cie10').value = d.dx_medicos || '';$('diagnostico_cie10').value = d.diagnostico || '';
+              } else {
+                  document.querySelectorAll('.btn-tab')[0].click();
+                  $('intervencion').value = d.intervencion || '';
+                  $('dx_medicos').value = d.dx_medicos || '';$('diagnostico').value = d.diagnostico || '';
+              }
+
+              updateAllSections();
+              document.querySelectorAll('.form-section').forEach(expandSection);
+
+              if(identificadorCargado && identificadorCargado.length === 18) {
+                  $('curp').dispatchEvent(new Event('input'));
+              }
+          } else if (data.estatus === 'vacio') {
+              alert("✅ ¡Excelente! No hay más registros pendientes en el Excel por capturar.");
+              $('borradorStatus').innerText = "Todo al día.";
+          } else {
+              alert("Error: " + data.mensaje);
+          }
+      });
+  });
+</script>
+</body>
+</html>
